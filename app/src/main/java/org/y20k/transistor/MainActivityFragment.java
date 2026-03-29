@@ -327,7 +327,7 @@ public final class MainActivityFragment extends Fragment implements TransistorKe
 
 
     /* start player service using intent */
-    private void startPlayback(Station station) {
+    public void startPlayback(Station station) {
         Intent intent = new Intent(mActivity, PlayerService.class);
         intent.setAction(ACTION_PLAY);
         intent.putExtra(EXTRA_STATION, station);
