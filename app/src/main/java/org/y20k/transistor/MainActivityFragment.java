@@ -41,6 +41,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -402,6 +403,24 @@ public final class MainActivityFragment extends Fragment implements TransistorKe
 
     /* Attaches tap listeners to buttons */
     private void setAdapterListeners() {
+        // 获取自动播放开关
+        ToggleButton autoPlayToggle = mRootView.findViewById(R.id.player_sheet_auto_play_toggle);
+        // 读取保存的状态
+        boolean autoPlayEnabled = PreferenceManager.getDefaultSharedPreferences(mActivity)
+                .getBoolean(PREF_AUTO_PLAY, true);
+        autoPlayToggle.setChecked(autoPlayEnabled);
+
+        autoPlayToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            PreferenceManager.getDefaultSharedPreferences(mActivity)
+                    .edit()
+                    .putBoolean(PREF_AUTO_PLAY, isChecked)
+                    .apply();
+            // 更新成员变量
+            mAutoPlayEnabled = isChecked;
+            // 可选：给一个简短提示
+            Toast.makeText(mActivity, isChecked ? "自动播放已开启" : "自动播放已关闭", Toast.LENGTH_SHORT).show();
+        });
+
         // tap on station list
         mCollectionAdapter.setCollectionAdapterListener(new CollectionAdapter.CollectionAdapterListener() {
             @Override

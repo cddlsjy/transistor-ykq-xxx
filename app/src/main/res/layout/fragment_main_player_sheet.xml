@@ -124,6 +124,20 @@
         app:layout_constraintTop_toBottomOf="@+id/player_station_image"
         app:srcCompat="@drawable/ic_timer_inverted_24dp" />
 
+    <!-- 自动播放开关 -->
+    <ToggleButton
+        android:id="@+id/player_sheet_auto_play_toggle"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textOn="自动播放开"
+        android:textOff="自动播放关"
+        android:checked="false"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:layout_constraintStart_toEndOf="@+id/player_sheet_timer_button"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
     <ImageButton
         android:id="@+id/player_sheet_station_options_button"
         android:layout_width="wrap_content"

@@ -772,8 +772,8 @@ public final class PlayerService extends MediaBrowserServiceCompat implements Tr
         // create MediaSource
         MediaSource mediaSource;
         if (connectionType == CONNECTION_TYPE_HLS) {
-            // TODO HLS does not work reliable
-            Toast.makeText(this, this.getString(R.string.toastmessage_stream_may_not_work), Toast.LENGTH_LONG).show();
+            // HLS 实际上是支持的，去掉误导用户的提示
+            // Toast.makeText(this, this.getString(R.string.toastmessage_stream_may_not_work), Toast.LENGTH_LONG).show();
             mediaSource = new HlsMediaSource.Factory(dataSourceFactory).createMediaSource(mStation.getStreamUri());
         } else {
             mediaSource = new ProgressiveMediaSource.Factory(dataSourceFactory).setContinueLoadingCheckIntervalBytes(32).createMediaSource(mStation.getStreamUri());
