@@ -107,7 +107,7 @@ public final class MainActivity extends AppCompatActivity implements TransistorK
         if (mAutoLoaded) return;
         mAutoLoaded = true;
 
-        // 1. 获取当前存储中已有的电台列表
+        // 获取当前存储中的电台列表
         ArrayList<Station> existingStations = StationListHelper.loadStationListFromStorage(this);
         List<Station> builtinStations = JsonHelper.parseJsonString(JsonConstants.DEFAULT_JSON_CONTENT);
         if (builtinStations == null || builtinStations.isEmpty()) {
@@ -115,10 +115,10 @@ public final class MainActivity extends AppCompatActivity implements TransistorK
             return;
         }
 
-        // 2. 添加不存在的电台
-        boolean added = false;
         File folder = StorageHelper.getCollectionDirectory(this);
+        boolean added = false;
         for (Station station : builtinStations) {
+            // 检查是否已存在（根据 URL）
             boolean exists = false;
             for (Station exist : existingStations) {
                 if (exist.getStreamUri().equals(station.getStreamUri())) {
@@ -127,6 +127,9 @@ public final class MainActivity extends AppCompatActivity implements TransistorK
                 }
             }
             if (!exists) {
+                // ★★★ 关键修复：设置图片文件路径（即使没有真实图片，也会生成一个有效的 File 对象）★★★
+                station.setStationImageFile(folder);
+                // 写入 m3u 文件（内部会设置 mStationPlaylistFile）
                 station.writePlaylistFile(folder);
                 existingStations.add(station);
                 added = true;
@@ -134,18 +137,13 @@ public final class MainActivity extends AppCompatActivity implements TransistorK
             }
         }
 
-        // 3. 如果有新增，刷新 LiveData 并重新加载存储列表
         if (added) {
             mCollectionViewModel.getStationList().setValue(existingStations);
-            // 等待一小段时间让 LiveData 更新（也可以不等待，但为了保险）
-            // 实际上不需要 sleep，因为下面会重新从存储加载
         }
 
-        // 4. 重新从存储加载一次，确保获取完整的 Station 对象（包含图片路径等）
-        ArrayList<Station> finalList = StationListHelper.loadStationListFromStorage(this);
-        if (finalList != null && !finalList.isEmpty()) {
-            // 自动播放第一个电台
-            Station first = finalList.get(0);
+        // 播放第一个电台（直接从 existingStations 中取，确保对象完整）
+        if (!existingStations.isEmpty()) {
+            Station first = existingStations.get(0);
             MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager()
                     .findFragmentByTag(MAIN_ACTIVITY_FRAGMENT_TAG);
             if (fragment != null) {
