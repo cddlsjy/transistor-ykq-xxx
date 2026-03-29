@@ -146,7 +146,7 @@ public final class MainActivityFragment extends Fragment implements TransistorKe
 
         // 读取自动播放设置
         mAutoPlayEnabled = PreferenceManager.getDefaultSharedPreferences(mActivity)
-                .getBoolean(PREF_AUTO_PLAY, false);
+                .getBoolean(PREF_AUTO_PLAY, true);   // 默认 true
         mAutoPlayPerformed = false;
 
         // create collection adapter
