@@ -33,6 +33,7 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.preference.PreferenceManager;
 
 import org.y20k.transistor.collection.CollectionViewModel;
+import org.y20k.transistor.constant.RadioConstant;
 import org.y20k.transistor.core.Station;
 import org.y20k.transistor.helpers.DialogError;
 import org.y20k.transistor.helpers.ImageHelper;
@@ -42,6 +43,8 @@ import org.y20k.transistor.helpers.ShortcutHelper;
 import org.y20k.transistor.helpers.StationListHelper;
 import org.y20k.transistor.helpers.StorageHelper;
 import org.y20k.transistor.helpers.TransistorKeys;
+import org.y20k.transistor.model.RadioStation;
+import org.y20k.transistor.parser.M3uParser;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -92,6 +95,61 @@ public final class MainActivity extends AppCompatActivity implements TransistorK
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.main_container, listFragment, MAIN_ACTIVITY_FRAGMENT_TAG)
                 .commit();
+
+        // 启动时自动加载M3U电台并播放
+        autoLoadAndPlayM3uStation();
+    }
+
+    /**
+     * 自动加载M3U电台：优先本地，后内置默认
+     */
+    private void autoLoadAndPlayM3uStation() {
+        List<RadioStation> stationList;
+        // 1. 解析本地M3U文件
+        stationList = M3uParser.parseLocalM3u(RadioConstant.LOCAL_M3U_PATH);
+        if (stationList == null || stationList.isEmpty()) {
+            LogHelper.d(LOG_TAG, "本地M3U文件不存在/解析失败，加载内置默认电台");
+            // 2. 本地文件不存在，解析内置M3U字符串
+            stationList = M3uParser.parseM3uString(RadioConstant.DEFAULT_M3U_CONTENT);
+        }
+
+        // 3. 解析成功则添加到收藏并自动播放第一个
+        if (stationList != null && !stationList.isEmpty()) {
+            for (RadioStation station : stationList) {
+                // 检查电台是否已存在
+                if (StationListHelper.findStationId(mStationList, station.getPlayUrl()) == -1) {
+                    // 创建Station对象并添加到列表
+                    Station newStation = new Station(station.getStationName(), station.getPlayUrl());
+                    // 写入播放列表文件
+                    File folder = StorageHelper.getCollectionDirectory(this);
+                    newStation.writePlaylistFile(folder);
+                    // 添加到列表
+                    ArrayList<Station> newStationList = StationListHelper.copyStationList(mStationList);
+                    newStationList.add(newStation);
+                    mCollectionViewModel.getStationList().setValue(newStationList);
+                    LogHelper.d(LOG_TAG, "添加电台：" + station.getStationName() + " | " + station.getPlayUrl());
+                }
+            }
+            // 自动播放第一个电台
+            RadioStation firstStation = stationList.get(0);
+            // 查找对应的Station对象并播放
+            int stationId = StationListHelper.findStationId(mStationList, firstStation.getPlayUrl());
+            if (stationId != -1) {
+                Station stationToPlay = mStationList.get(stationId);
+                // 通过MainActivityFragment播放电台
+                MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager().findFragmentByTag(MAIN_ACTIVITY_FRAGMENT_TAG);
+                if (fragment != null) {
+                    // 调用startPlayback方法播放电台
+                    Intent intent = new Intent(this, PlayerService.class);
+                    intent.setAction(ACTION_PLAY);
+                    intent.putExtra(EXTRA_STATION, stationToPlay);
+                    startService(intent);
+                    LogHelper.d(LOG_TAG, "自动播放电台：" + firstStation.getStationName());
+                }
+            }
+        } else {
+            LogHelper.e(LOG_TAG, "本地M3U和内置M3U均解析失败，无电台可加载");
+        }
     }
 
 
