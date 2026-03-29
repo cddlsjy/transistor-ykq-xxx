@@ -267,6 +267,20 @@ public final class Station implements TransistorKeys, Cloneable, Comparable<Stat
     }
 
 
+    /* 简易构造方法：仅用于临时创建，需要后续调用 writePlaylistFile 保存 */
+    public Station(String stationName, String streamUrl) {
+        mStationName = stationName;
+        mStreamUri = Uri.parse(streamUrl);
+        mPlayback = PLAYBACK_STATE_STOPPED;
+        mSelected = false;
+        mMetadata = "";
+        mMimeType = "";
+        mChannelCount = -1;
+        mSampleRate = -1;
+        mBitrate = -1;
+        mStationFetchResults = new Bundle();
+    }
+
     /* Constructor used by CREATOR */
     protected Station(Parcel in) {
         mStationImageFile = new File (in.readString());
