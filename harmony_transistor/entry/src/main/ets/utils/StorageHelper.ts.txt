@@ -1,0 +1,172 @@
+/**
+ * Storage Helper - Utility for local data storage
+ */
+import dataPreferences from '@ohos.data.preferences';
+import hilog from '@ohos.hilog';
+
+const TAG = 'StorageHelper';
+const DOMAIN = 0x0000;
+
+const PREFERENCES_NAME = 'transistor_preferences';
+
+/**
+ * StorageHelper class for managing app preferences
+ */
+export class StorageHelper {
+  private static instance: StorageHelper;
+  private preferences: dataPreferences.Preferences | null = null;
+
+  private constructor() {}
+
+  static getInstance(): StorageHelper {
+    if (!StorageHelper.instance) {
+      StorageHelper.instance = new StorageHelper();
+    }
+    return StorageHelper.instance;
+  }
+
+  /**
+   * Initialize preferences
+   */
+  async init(context: any): Promise<void> {
+    try {
+      this.preferences = await dataPreferences.getPreferences(context, PREFERENCES_NAME);
+      hilog.info(DOMAIN, TAG, 'Preferences initialized');
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to init preferences: %{public}s', JSON.stringify(e));
+    }
+  }
+
+  /**
+   * Put string value
+   */
+  async putString(key: string, value: string): Promise<void> {
+    if (!this.preferences) {
+      return;
+    }
+    try {
+      await this.preferences.put(key, value);
+      await this.preferences.flush();
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to put string: %{public}s', JSON.stringify(e));
+    }
+  }
+
+  /**
+   * Get string value
+   */
+  async getString(key: string, defaultValue: string = ''): Promise<string> {
+    if (!this.preferences) {
+      return defaultValue;
+    }
+    try {
+      const value = await this.preferences.get(key, defaultValue);
+      return value as string;
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to get string: %{public}s', JSON.stringify(e));
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Put boolean value
+   */
+  async putBoolean(key: string, value: boolean): Promise<void> {
+    if (!this.preferences) {
+      return;
+    }
+    try {
+      await this.preferences.put(key, value);
+      await this.preferences.flush();
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to put boolean: %{public}s', JSON.stringify(e));
+    }
+  }
+
+  /**
+   * Get boolean value
+   */
+  async getBoolean(key: string, defaultValue: boolean = false): Promise<boolean> {
+    if (!this.preferences) {
+      return defaultValue;
+    }
+    try {
+      const value = await this.preferences.get(key, defaultValue);
+      return value as boolean;
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to get boolean: %{public}s', JSON.stringify(e));
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Put number value
+   */
+  async putNumber(key: string, value: number): Promise<void> {
+    if (!this.preferences) {
+      return;
+    }
+    try {
+      await this.preferences.put(key, value);
+      await this.preferences.flush();
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to put number: %{public}s', JSON.stringify(e));
+    }
+  }
+
+  /**
+   * Get number value
+   */
+  async getNumber(key: string, defaultValue: number = 0): Promise<number> {
+    if (!this.preferences) {
+      return defaultValue;
+    }
+    try {
+      const value = await this.preferences.get(key, defaultValue);
+      return value as number;
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to get number: %{public}s', JSON.stringify(e));
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Delete a key
+   */
+  async delete(key: string): Promise<void> {
+    if (!this.preferences) {
+      return;
+    }
+    try {
+      await this.preferences.delete(key);
+      await this.preferences.flush();
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to delete: %{public}s', JSON.stringify(e));
+    }
+  }
+
+  /**
+   * Clear all preferences
+   */
+  async clear(): Promise<void> {
+    if (!this.preferences) {
+      return;
+    }
+    try {
+      await this.preferences.clear();
+      await this.preferences.flush();
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to clear: %{public}s', JSON.stringify(e));
+    }
+  }
+}
+
+/**
+ * Keys for preferences
+ */
+export const PreferenceKeys = {
+  LAST_STATION_URI: 'last_station_uri',
+  TIMER_RUNNING: 'timer_running',
+  TIMER_DURATION: 'timer_duration',
+  SELECTED_STATION_URI: 'selected_station_uri'
+};

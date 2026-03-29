@@ -1,0 +1,12 @@
+{
+  "apiType": 'stageMode',
+  "buildOption": {
+    "arkOptions": {
+      "etsOptions": {
+        "transformMode": "ONLY_ETS"
+      }
+    }
+  },
+  "compileSdkVersion": 9,
+  "compatibleSdkVersion": 9
+}

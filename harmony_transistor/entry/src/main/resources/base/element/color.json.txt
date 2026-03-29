@@ -1,0 +1,52 @@
+{
+  "color": [
+    {
+      "name": "start_window_background",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "primary_color",
+      "value": "#6200EE"
+    },
+    {
+      "name": "primary_dark",
+      "value": "#3700B3"
+    },
+    {
+      "name": "accent_color",
+      "value": "#03DAC5"
+    },
+    {
+      "name": "background_color",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "surface_color",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "on_surface",
+      "value": "#000000"
+    },
+    {
+      "name": "on_primary",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "text_primary",
+      "value": "#212121"
+    },
+    {
+      "name": "text_secondary",
+      "value": "#757575"
+    },
+    {
+      "name": "divider",
+      "value": "#BDBDBD"
+    },
+    {
+      "name": "player_background",
+      "value": "#F5F5F5"
+    }
+  ]
+}

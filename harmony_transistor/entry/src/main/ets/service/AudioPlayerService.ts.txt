@@ -1,0 +1,308 @@
+/**
+ * Transistor - Simple Radio App for HarmonyOS
+ * Audio Player Service using AVPlayer
+ */
+import audio from '@ohos.multimedia.audio';
+import avplayer from '@ohos.multimedia.avplayer';
+import hilog from '@ohos.hilog';
+import { Station, PLAYBACK_STATE_STOPPED, PLAYBACK_STATE_LOADING, PLAYBACK_STATE_PLAYING } from '../model/Station';
+
+const TAG = 'AudioPlayerService';
+const DOMAIN = 0x0000;
+
+export type PlaybackStateCallback = (state: number, station: Station) => void;
+export type MetadataCallback = (metadata: string, mimeType: string, sampleRate: number, channels: number) => void;
+export type ErrorCallback = (error: string) => void;
+
+/**
+ * AudioPlayerService - manages audio playback
+ */
+export class AudioPlayerService {
+  private static instance: AudioPlayerService;
+  private player: avplayer.AVPlayer | null = null;
+  private currentStation: Station | null = null;
+  private isInitialized: boolean = false;
+  private playbackStateCallback: PlaybackStateCallback | null = null;
+  private metadataCallback: MetadataCallback | null = null;
+  private errorCallback: ErrorCallback | null = null;
+  private audioManager: audio.AudioManager | null = null;
+
+  private constructor() {
+    this.initAudioManager();
+  }
+
+  static getInstance(): AudioPlayerService {
+    if (!AudioPlayerService.instance) {
+      AudioPlayerService.instance = new AudioPlayerService();
+    }
+    return AudioPlayerService.instance;
+  }
+
+  /**
+   * Initialize audio manager for volume control
+   */
+  private initAudioManager(): void {
+    try {
+      this.audioManager = audio.getAudioManager();
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to get audio manager: %{public}s', JSON.stringify(e));
+    }
+  }
+
+  /**
+   * Set playback state callback
+   */
+  setPlaybackStateCallback(callback: PlaybackStateCallback): void {
+    this.playbackStateCallback = callback;
+  }
+
+  /**
+   * Set metadata callback
+   */
+  setMetadataCallback(callback: MetadataCallback): void {
+    this.metadataCallback = callback;
+  }
+
+  /**
+   * Set error callback
+   */
+  setErrorCallback(callback: ErrorCallback): void {
+    this.errorCallback = callback;
+  }
+
+  /**
+   * Initialize the player
+   */
+  async init(): Promise<void> {
+    if (this.isInitialized) {
+      return;
+    }
+
+    try {
+      this.player = await avplayer.createAVPlayer();
+      this.setupPlayerListeners();
+      this.isInitialized = true;
+      hilog.info(DOMAIN, TAG, 'AVPlayer initialized');
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to create AVPlayer: %{public}s', JSON.stringify(e));
+      throw e;
+    }
+  }
+
+  /**
+   * Setup player event listeners
+   */
+  private setupPlayerListeners(): void {
+    if (!this.player) {
+      return;
+    }
+
+    this.player.on('playbackState', (state: number) => {
+      hilog.info(DOMAIN, TAG, 'Playback state changed: %{public}d', state);
+      this.handlePlaybackStateChange(state);
+    });
+
+    this.player.on('mediaError', (error: avplayer.AVPlayerError) => {
+      hilog.error(DOMAIN, TAG, 'Media error: %{public}s', JSON.stringify(error));
+      this.handleError(error.message || 'Unknown media error');
+    });
+
+    this.player.on('endOfStream', () => {
+      hilog.info(DOMAIN, TAG, 'End of stream');
+    });
+
+    this.player.on('subtitleUpdate', (subtitle: avplayer.SubtitleInfo) => {
+      hilog.info(DOMAIN, TAG, 'Subtitle update');
+    });
+
+    this.player.on('bufferingUpdate', (info: avplayer.BufferingInfoType) => {
+      hilog.info(DOMAIN, TAG, 'Buffering update');
+    });
+
+    this.player.on('volumeChange', (vol: number) => {
+      hilog.info(DOMAIN, TAG, 'Volume changed: %{public}f', vol);
+    });
+
+    this.player.on('BitrateRange', (bitrateRange: audio.AudioBitrateRange) => {
+      hilog.info(DOMAIN, TAG, 'Bitrate range changed');
+    });
+  }
+
+  /**
+   * Handle playback state changes
+   */
+  private handlePlaybackStateChange(state: number): void {
+    if (!this.currentStation || !this.playbackStateCallback) {
+      return;
+    }
+
+    let newState: number;
+    switch (state) {
+      case avplayer.PlaybackState.PLAYING:
+        newState = PLAYBACK_STATE_PLAYING;
+        break;
+      case avplayer.PlaybackState.BUFFERING:
+        newState = PLAYBACK_STATE_LOADING;
+        break;
+      case avplayer.PlaybackState.STOPPED:
+      case avplayer.PlaybackState.IDLE:
+      default:
+        newState = PLAYBACK_STATE_STOPPED;
+        break;
+    }
+
+    this.currentStation.playbackState = newState;
+    this.playbackStateCallback(newState, this.currentStation);
+    AppStorage.setOrCreate('isPlaying', newState === PLAYBACK_STATE_PLAYING);
+  }
+
+  /**
+   * Handle errors
+   */
+  private handleError(error: string): void {
+    if (this.errorCallback) {
+      this.errorCallback(error);
+    }
+    if (this.currentStation) {
+      this.currentStation.playbackState = PLAYBACK_STATE_STOPPED;
+      if (this.playbackStateCallback) {
+        this.playbackStateCallback(PLAYBACK_STATE_STOPPED, this.currentStation);
+      }
+    }
+  }
+
+  /**
+   * Play a station
+   */
+  async play(station: Station): Promise<void> {
+    if (!this.player || !this.isInitialized) {
+      await this.init();
+    }
+
+    if (this.player && this.currentStation && this.currentStation.streamUri === station.streamUri) {
+      // Same station, just resume
+      await this.resume();
+      return;
+    }
+
+    this.currentStation = station;
+    station.playbackState = PLAYBACK_STATE_LOADING;
+
+    if (this.playbackStateCallback) {
+      this.playbackStateCallback(PLAYBACK_STATE_LOADING, station);
+    }
+
+    try {
+      if (this.player) {
+        await this.player.reset();
+        await this.player.setUrl(station.streamUri);
+        await this.player.prepare();
+        await this.player.play();
+        hilog.info(DOMAIN, TAG, 'Playing: %{public}s', station.name);
+      }
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to play: %{public}s', JSON.stringify(e));
+      this.handleError('Failed to play stream');
+    }
+  }
+
+  /**
+   * Stop playback
+   */
+  async stop(): Promise<void> {
+    if (!this.player) {
+      return;
+    }
+
+    try {
+      await this.player.stop();
+      if (this.currentStation) {
+        this.currentStation.playbackState = PLAYBACK_STATE_STOPPED;
+        if (this.playbackStateCallback) {
+          this.playbackStateCallback(PLAYBACK_STATE_STOPPED, this.currentStation);
+        }
+      }
+      hilog.info(DOMAIN, TAG, 'Playback stopped');
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to stop: %{public}s', JSON.stringify(e));
+    }
+  }
+
+  /**
+   * Pause playback
+   */
+  async pause(): Promise<void> {
+    if (!this.player) {
+      return;
+    }
+
+    try {
+      await this.player.pause();
+      hilog.info(DOMAIN, TAG, 'Playback paused');
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to pause: %{public}s', JSON.stringify(e));
+    }
+  }
+
+  /**
+   * Resume playback
+   */
+  async resume(): Promise<void> {
+    if (!this.player) {
+      return;
+    }
+
+    try {
+      await this.player.play();
+      hilog.info(DOMAIN, TAG, 'Playback resumed');
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to resume: %{public}s', JSON.stringify(e));
+    }
+  }
+
+  /**
+   * Get current station
+   */
+  getCurrentStation(): Station | null {
+    return this.currentStation;
+  }
+
+  /**
+   * Check if playing
+   */
+  isPlaying(): boolean {
+    return this.player ? this.player.state === 'playing' : false;
+  }
+
+  /**
+   * Set volume
+   */
+  async setVolume(volume: number): Promise<void> {
+    if (!this.player) {
+      return;
+    }
+
+    try {
+      await this.player.setVolume(volume);
+      hilog.info(DOMAIN, TAG, 'Volume set to: %{public}f', volume);
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to set volume: %{public}s', JSON.stringify(e));
+    }
+  }
+
+  /**
+   * Release player resources
+   */
+  async release(): Promise<void> {
+    if (this.player) {
+      try {
+        await this.player.release();
+        this.player = null;
+        this.isInitialized = false;
+        hilog.info(DOMAIN, TAG, 'Player released');
+      } catch (e) {
+        hilog.error(DOMAIN, TAG, 'Failed to release player: %{public}s', JSON.stringify(e));
+      }
+    }
+  }
+}

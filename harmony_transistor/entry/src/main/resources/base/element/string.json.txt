@@ -1,0 +1,120 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Transistor - Simple Radio App for HarmonyOS"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "Transistor Radio App"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "Transistor"
+    },
+    {
+      "name": "app_name",
+      "value": "Transistor"
+    },
+    {
+      "name": "station_list_empty",
+      "value": "No stations added yet. Tap + to add a radio station."
+    },
+    {
+      "name": "add_station",
+      "value": "Add Station"
+    },
+    {
+      "name": "enter_stream_url",
+      "value": "Enter stream URL"
+    },
+    {
+      "name": "cancel",
+      "value": "Cancel"
+    },
+    {
+      "name": "ok",
+      "value": "OK"
+    },
+    {
+      "name": "play",
+      "value": "Play"
+    },
+    {
+      "name": "stop",
+      "value": "Stop"
+    },
+    {
+      "name": "loading",
+      "value": "Loading..."
+    },
+    {
+      "name": "error_connection",
+      "value": "Unable to connect to stream"
+    },
+    {
+      "name": "error_no_stations",
+      "value": "No stations available"
+    },
+    {
+      "name": "station_added",
+      "value": "Station added successfully"
+    },
+    {
+      "name": "station_deleted",
+      "value": "Station deleted"
+    },
+    {
+      "name": "confirm_delete",
+      "value": "Delete this station?"
+    },
+    {
+      "name": "yes",
+      "value": "Yes"
+    },
+    {
+      "name": "no",
+      "value": "No"
+    },
+    {
+      "name": "station_name",
+      "value": "Station Name"
+    },
+    {
+      "name": "stream_url",
+      "value": "Stream URL"
+    },
+    {
+      "name": "mime_type",
+      "value": "MIME Type"
+    },
+    {
+      "name": "channels",
+      "value": "Channels"
+    },
+    {
+      "name": "sample_rate",
+      "value": "Sample Rate"
+    },
+    {
+      "name": "no_data",
+      "value": "N/A"
+    },
+    {
+      "name": "copied_to_clipboard",
+      "value": "Copied to clipboard"
+    },
+    {
+      "name": "sleep_timer_set",
+      "value": "Sleep timer set for"
+    },
+    {
+      "name": "sleep_timer_cancelled",
+      "value": "Sleep timer cancelled"
+    },
+    {
+      "name": "minutes",
+      "value": "minutes"
+    }
+  ]
+}

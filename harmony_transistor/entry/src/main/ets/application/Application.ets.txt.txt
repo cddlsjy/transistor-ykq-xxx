@@ -1,0 +1,12 @@
+/**
+ * Transistor - Simple Radio App for HarmonyOS
+ * Application entry
+ */
+import hilog from '@ohos.hilog';
+
+AppStorage.setOrCreate('stations', []);
+AppStorage.setOrCreate('currentStation', null);
+AppStorage.setOrCreate('playbackState', 0);
+AppStorage.setOrCreate('isPlaying', false);
+
+hilog.info(0x0000, 'Transistor', 'Application initialized');
