@@ -107,42 +107,53 @@ public final class MainActivity extends AppCompatActivity implements TransistorK
         if (mAutoLoaded) return;
         mAutoLoaded = true;
 
-        List<Station> stationList;
-        // 1. 尝试读取本地 /sdcard/station/station.json
-        stationList = JsonHelper.parseLocalJson(JsonConstants.LOCAL_JSON_PATH);
-        if (stationList == null || stationList.isEmpty()) {
-            LogHelper.d(LOG_TAG, "本地 JSON 文件不存在或解析失败，使用内置电台");
-            stationList = JsonHelper.parseJsonString(JsonConstants.DEFAULT_JSON_CONTENT);
+        // 1. 获取当前存储中已有的电台列表
+        ArrayList<Station> existingStations = StationListHelper.loadStationListFromStorage(this);
+        List<Station> builtinStations = JsonHelper.parseJsonString(JsonConstants.DEFAULT_JSON_CONTENT);
+        if (builtinStations == null || builtinStations.isEmpty()) {
+            LogHelper.e(LOG_TAG, "内置电台解析失败");
+            return;
         }
 
-        if (stationList != null && !stationList.isEmpty()) {
-            for (Station station : stationList) {
-                // 检查是否已存在（根据 URL 判断）
-                if (StationListHelper.findStationId(mStationList, station.getStreamUri()) == -1) {
-                    // 获取 Collection 文件夹
-                    File folder = StorageHelper.getCollectionDirectory(this);
-                    // 写入 m3u 文件（Station 内部会生成文件名）
-                    station.writePlaylistFile(folder);
-                    // 添加到列表并更新 LiveData
-                    ArrayList<Station> newStationList = StationListHelper.copyStationList(mStationList);
-                    newStationList.add(station);
-                    mCollectionViewModel.getStationList().setValue(newStationList);
-                    LogHelper.d(LOG_TAG, "添加电台：" + station.getStationName());
+        // 2. 添加不存在的电台
+        boolean added = false;
+        File folder = StorageHelper.getCollectionDirectory(this);
+        for (Station station : builtinStations) {
+            boolean exists = false;
+            for (Station exist : existingStations) {
+                if (exist.getStreamUri().equals(station.getStreamUri())) {
+                    exists = true;
+                    break;
                 }
             }
+            if (!exists) {
+                station.writePlaylistFile(folder);
+                existingStations.add(station);
+                added = true;
+                LogHelper.d(LOG_TAG, "添加电台：" + station.getStationName());
+            }
+        }
+
+        // 3. 如果有新增，刷新 LiveData 并重新加载存储列表
+        if (added) {
+            mCollectionViewModel.getStationList().setValue(existingStations);
+            // 等待一小段时间让 LiveData 更新（也可以不等待，但为了保险）
+            // 实际上不需要 sleep，因为下面会重新从存储加载
+        }
+
+        // 4. 重新从存储加载一次，确保获取完整的 Station 对象（包含图片路径等）
+        ArrayList<Station> finalList = StationListHelper.loadStationListFromStorage(this);
+        if (finalList != null && !finalList.isEmpty()) {
             // 自动播放第一个电台
-            Station first = stationList.get(0);
-            int position = StationListHelper.findStationId(mStationList, first.getStreamUri());
-            if (position != -1) {
-                MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager()
-                        .findFragmentByTag(MAIN_ACTIVITY_FRAGMENT_TAG);
-                if (fragment != null) {
-                    fragment.startPlayback(mStationList.get(position));
-                    LogHelper.d(LOG_TAG, "自动播放：" + first.getStationName());
-                }
+            Station first = finalList.get(0);
+            MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager()
+                    .findFragmentByTag(MAIN_ACTIVITY_FRAGMENT_TAG);
+            if (fragment != null) {
+                fragment.startPlayback(first);
+                LogHelper.d(LOG_TAG, "自动播放：" + first.getStationName());
             }
         } else {
-            LogHelper.e(LOG_TAG, "本地和内建 JSON 均解析失败，无电台可加载");
+            LogHelper.e(LOG_TAG, "没有可用的电台");
         }
     }
 

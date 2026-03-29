@@ -328,12 +328,22 @@ public final class MainActivityFragment extends Fragment implements TransistorKe
 
     /* start player service using intent */
     public void startPlayback(Station station) {
-        Intent intent = new Intent(mActivity, PlayerService.class);
-        intent.setAction(ACTION_PLAY);
-        intent.putExtra(EXTRA_STATION, station);
-        mActivity.startService(intent);
-        mPlayerServiceStation = station;
-        LogHelper.v(LOG_TAG, "Starting player service.");
+        if (station == null || station.getStreamUri() == null) {
+            Toast.makeText(mActivity, "电台信息无效，无法播放", Toast.LENGTH_SHORT).show();
+            LogHelper.e(LOG_TAG, "startPlayback: station or streamUri is null");
+            return;
+        }
+        try {
+            Intent intent = new Intent(mActivity, PlayerService.class);
+            intent.setAction(ACTION_PLAY);
+            intent.putExtra(EXTRA_STATION, station);
+            mActivity.startService(intent);
+            mPlayerServiceStation = station;
+            LogHelper.v(LOG_TAG, "Starting player service for " + station.getStationName());
+        } catch (Exception e) {
+            LogHelper.e(LOG_TAG, "startPlayback failed: " + e.getMessage());
+            Toast.makeText(mActivity, "播放失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
 
