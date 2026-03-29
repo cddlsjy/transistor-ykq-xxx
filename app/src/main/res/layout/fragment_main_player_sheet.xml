@@ -134,9 +134,13 @@
         android:textOff="自动播放关"
         android:checked="false"
         android:background="?attr/selectableItemBackgroundBorderless"
+        android:layout_marginTop="24dp"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
         app:layout_constraintStart_toEndOf="@+id/player_sheet_timer_button"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/player_station_image" />
 
     <ImageButton
         android:id="@+id/player_sheet_station_options_button"
