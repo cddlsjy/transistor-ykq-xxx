@@ -178,7 +178,8 @@ return ContextCompat.getColor(context, R.color.default_neutral_medium_light)
 
 通过以上四个文件的修改，项目成功将 `minSdkVersion` 从 25 降低到 21，并消除了所有因直接使用高版本 `Resources.getColor()` 方法而导致的兼容性问题。修改后的代码全部使用 `ContextCompat.getColor()` 获取颜色资源，保证了在 Android 5.0（API 21）及以上版本中的稳定运行。其他未修改的文件未发现类似 API 兼容性问题，项目可以顺利编译并预期在低版本设备上正常工作。# 结论，-
 
-两个修改
+
+## 修改详情个修改
 Transistor v4.3.0 相比 v4.2.6 仅增加了动态颜色（Dynamic Colors）功能，且该功能已通过 `DynamicColors.isDynamicColorAvailable()` 进行版本判断（API 31+），在低版本系统上不会生效，**不会引发兼容性问题**。因此，将 `minSdkVersion` 从 25 降至 21 所需修改的文件与 v4.2.6 完全相同，仅需修改以下两个文件：
 
 1. **`app/build.gradle`**：将 `minSdkVersion 25` 改为 `minSdkVersion 21`
